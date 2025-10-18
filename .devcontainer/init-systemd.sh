@@ -1,21 +1,32 @@
 #!/bin/bash
 set -e
 
-echo "Initializing systemd user session..."
+echo "=== Initializing Debian 12 with systemd support ==="
 
-# Start dbus if not running
+# Set environment variable for systemd
+export container=docker
+
+# Start dbus daemon
+echo "Starting dbus daemon..."
 if ! pgrep -x "dbus-daemon" > /dev/null; then
-    echo "Starting dbus daemon..."
-    dbus-daemon --config-file=/etc/dbus-1/system.conf --print-address
+    dbus-daemon --system --nofork --nopidfile &
+    sleep 1
 fi
 
-# Create user systemd runtime directory
-if [ -n "$SUDO_USER" ]; then
-    mkdir -p /run/user/$(id -u $SUDO_USER)
-    chmod 0700 /run/user/$(id -u $SUDO_USER)
-    export XDG_RUNTIME_DIR=/run/user/$(id -u $SUDO_USER)
-fi
+# Enable user systemd session
+echo "Setting up user systemd session..."
+mkdir -p /run/user/0
+chmod 0700 /run/user/0
+export XDG_RUNTIME_DIR=/run/user/0
 
-echo "systemd initialization complete."
-echo "To use systemctl commands, run: systemctl --user status (for user services)"
-echo "Or: sudo systemctl status (for system services)"
+# Verify systemd is working
+echo "Verifying systemd setup..."
+systemctl --version
+
+echo ""
+echo "=== Setup Complete ==="
+echo "Usage:"
+echo "  systemctl status                    - Check system services"
+echo "  systemctl --user status             - Check user services"
+echo "  sudo systemctl start <service>      - Start a system service"
+echo "  systemctl --user start <service>    - Start a user service"
