@@ -9,11 +9,19 @@
   },
   "runArgs": [
     "--privileged",
-    "--volume", "/var/run/dbus:/var/run/dbus:rw",
     "--volume", "/sys/fs/cgroup:/sys/fs/cgroup:rw",
     "--volume", "/run/systemd:/run/systemd:rw",
-    "--volume", "/etc/systemd:/etc/systemd:rw"
+    "--volume", "/var/run/dbus:/var/run/dbus:rw",
+    "--tmpfs", "/run",
+    "--tmpfs", "/run/lock"
   ],
   "postCreateCommand": "bash .devcontainer/init-systemd.sh",
-  "remoteUser": "root"
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.makefile-tools"
+      ]
+    }
+  }
 }
