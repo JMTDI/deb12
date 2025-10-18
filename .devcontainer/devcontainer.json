@@ -1,0 +1,18 @@
+{
+  "name": "Debian 12 with systemd",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "runArgs": [
+    "--privileged",
+    "--volume", "/var/run/dbus:/var/run/dbus",
+    "--volume", "/sys/fs/cgroup:/sys/fs/cgroup:ro",
+    "--volume", "/run/systemd/system:/run/systemd/system"
+  ],
+  "postCreateCommand": "systemctl start dbus && apt-get update && apt-get install -y git curl wget build-essential",
+  "remoteUser": "root"
+}
