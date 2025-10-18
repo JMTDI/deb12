@@ -1,5 +1,5 @@
 {
-  "name": "Debian 12 with systemd",
+  "name": "Debian 12 with systemd (PID 1)",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."
@@ -9,19 +9,12 @@
   },
   "runArgs": [
     "--privileged",
-    "--volume", "/sys/fs/cgroup:/sys/fs/cgroup:rw",
-    "--volume", "/run/systemd:/run/systemd:rw",
-    "--volume", "/var/run/dbus:/var/run/dbus:rw",
+    "--volume", "/sys/fs/cgroup:/sys/fs/cgroup:ro",
     "--tmpfs", "/run",
-    "--tmpfs", "/run/lock"
+    "--tmpfs", "/run/lock",
+    "--volume", "/var/run/dbus:/var/run/dbus:rw",
+    "--cap-add", "SYS_ADMIN"
   ],
-  "postCreateCommand": "bash .devcontainer/init-systemd.sh",
-  "remoteUser": "root",
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "ms-vscode.makefile-tools"
-      ]
-    }
-  }
+  "postCreateCommand": "sudo bash .devcontainer/init-systemd.sh",
+  "remoteUser": "developer"
 }
