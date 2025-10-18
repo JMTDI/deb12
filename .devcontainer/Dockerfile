@@ -5,38 +5,29 @@ ENV container=docker
 
 # Install systemd and essential packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    systemd \
-    systemd-sysv \
-    systemd-container \
-    dbus \
-    dbus-user-session \
-    ca-certificates \
-    curl \
-    wget \
-    git \
-    build-essential \
-    vim \
-    nano \
-    bash-completion \
-    sudo \
-    procps \
-    udev \
-    iproute2 \
-    iputils-ping \
-    && rm -rf /var/lib/apt/lists/*
+    systemd systemd-sysv systemd-container dbus dbus-user-session \
+    ca-certificates curl wget git build-essential vim nano sudo \
+    procps udev iproute2 iputils-ping \
+  && rm -rf /var/lib/apt/lists/*
 
-# Mask unnecessary systemd services for container
-RUN systemctl set-default multi-user.target && \
-    systemctl mask systemd-logind.service
+# Create a non-root developer user
+RUN useradd -m -s /bin/bash -G sudo,systemd-journal developer \
+  && echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Create non-root user
-RUN useradd -m -s /bin/bash -G sudo,systemd-journal developer && \
-    echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# Ensure dbus socket dir and uuid
+RUN mkdir -p /var/run/dbus && dbus-uuidgen --ensure
 
-# Setup dbus
-RUN mkdir -p /var/run/dbus && \
-    dbus-uuidgen --ensure
+# Mask services that don't make sense in container
+RUN systemctl mask systemd-remount-fs.service nvidia-persistenced.service
+
+# Enable and configure journald for persistent logging
+RUN mkdir -p /var/log/journal && \
+    sed -i 's/#Storage=auto/Storage=persistent/' /etc/systemd/journald.conf
+
+# Create systemd user runtime directory
+RUN mkdir -p /run/user/1000 && chmod 0700 /run/user/1000
 
 WORKDIR /workspace
 
-CMD ["/lib/systemd/systemd-entrypoint", "bash"]
+# Run systemd as PID 1 (init)
+CMD ["/sbin/init"]
