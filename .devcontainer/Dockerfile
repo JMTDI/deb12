@@ -5,7 +5,8 @@ ENV container=docker
 
 # Install systemd and essential packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    systemd systemd-sysv systemd-container dbus dbus-user-session \
+    systemd systemd-sysv systemd-container systemd-journal-remote \
+    dbus dbus-user-session \
     ca-certificates curl wget git build-essential vim nano sudo \
     procps udev iproute2 iputils-ping \
   && rm -rf /var/lib/apt/lists/*
@@ -17,15 +18,24 @@ RUN useradd -m -s /bin/bash -G sudo,systemd-journal developer \
 # Ensure dbus socket dir and uuid
 RUN mkdir -p /var/run/dbus && dbus-uuidgen --ensure
 
+# Create persistent journal directory BEFORE masking services
+RUN mkdir -p /var/log/journal && chmod 2755 /var/log/journal
+
+# Configure journald for persistent storage
+RUN sed -i 's/#Storage=auto/Storage=persistent/' /etc/systemd/journald.conf && \
+    sed -i 's/#RateLimitIntervalSec=30s/RateLimitIntervalSec=10s/' /etc/systemd/journald.conf && \
+    sed -i 's/#RateLimitBurst=10000/RateLimitBurst=10000/' /etc/systemd/journald.conf
+
 # Mask services that don't make sense in container
-RUN systemctl mask systemd-remount-fs.service nvidia-persistenced.service
+RUN systemctl mask \
+    systemd-remount-fs.service \
+    systemd-udevd.service \
+    systemd-udev-trigger.service \
+    nvidia-persistenced.service
 
-# Enable and configure journald for persistent logging
-RUN mkdir -p /var/log/journal && \
-    sed -i 's/#Storage=auto/Storage=persistent/' /etc/systemd/journald.conf
-
-# Create systemd user runtime directory
-RUN mkdir -p /run/user/1000 && chmod 0700 /run/user/1000
+# Create systemd user runtime directories
+RUN mkdir -p /run/user/1000 && chmod 0700 /run/user/1000 && \
+    mkdir -p /run/user/0 && chmod 0700 /run/user/0
 
 WORKDIR /workspace
 
