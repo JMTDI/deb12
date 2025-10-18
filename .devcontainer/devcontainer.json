@@ -4,17 +4,14 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-  "settings": {
-    "terminal.integrated.shell.linux": "/bin/bash"
-  },
   "runArgs": [
     "--privileged",
     "--volume", "/sys/fs/cgroup:/sys/fs/cgroup:ro",
-    "--tmpfs", "/run",
-    "--tmpfs", "/run/lock",
+    "--volume", "/var/log/journal:/var/log/journal:rw",
     "--volume", "/var/run/dbus:/var/run/dbus:rw",
-    "--cap-add", "SYS_ADMIN"
+    "--tmpfs", "/run:rw,size=1g,mode=0755",
+    "--tmpfs", "/run/lock:rw,size=1g,mode=0755"
   ],
-  "postCreateCommand": "bash .devcontainer/init-systemd.sh",
+  "postStartCommand": "bash .devcontainer/start.sh",
   "remoteUser": "root"
 }
