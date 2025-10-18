@@ -15,6 +15,6 @@
     "--volume", "/var/run/dbus:/var/run/dbus:rw",
     "--cap-add", "SYS_ADMIN"
   ],
-  "postCreateCommand": "sudo bash .devcontainer/init-systemd.sh",
-  "remoteUser": "developer"
+  "postCreateCommand": "bash .devcontainer/init-systemd.sh",
+  "remoteUser": "root"
 }
