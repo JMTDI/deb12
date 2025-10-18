@@ -1,10 +1,12 @@
 FROM debian:12
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV container=docker
 
 # Install systemd and essential packages
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     systemd \
+    systemd-sysv \
     systemd-container \
     dbus \
     dbus-user-session \
@@ -19,8 +21,13 @@ RUN apt-get update && apt-get install -y \
     sudo \
     procps \
     udev \
-    && rm -rf /var/lib/apt/lists/* \
-    && systemctl set-default multi-user.target
+    iproute2 \
+    iputils-ping \
+    && rm -rf /var/lib/apt/lists/*
+
+# Mask unnecessary systemd services for container
+RUN systemctl set-default multi-user.target && \
+    systemctl mask systemd-logind.service
 
 # Create non-root user
 RUN useradd -m -s /bin/bash -G sudo,systemd-journal developer && \
@@ -32,5 +39,4 @@ RUN mkdir -p /var/run/dbus && \
 
 WORKDIR /workspace
 
-# Use bash as the default entrypoint instead of init
-ENTRYPOINT ["/bin/bash"]
+CMD ["/lib/systemd/systemd-entrypoint", "bash"]
