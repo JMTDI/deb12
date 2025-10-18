@@ -2,33 +2,45 @@
 set -e
 
 echo "=== Initializing Debian 12 with systemd support ==="
-
-# Start dbus if not running
-if ! pgrep -x "dbus-daemon" > /dev/null; then
-    echo "Starting dbus daemon..."
-    /etc/init.d/dbus start || true
-fi
-
-# Setup XDG_RUNTIME_DIR for current user
-if [ -n "$SUDO_USER" ]; then
-    USER_ID=$(id -u $SUDO_USER)
-    mkdir -p /run/user/$USER_ID
-    chmod 0700 /run/user/$USER_ID
-fi
-
-# Create journal directory
-mkdir -p /var/log/journal
-chmod 2755 /var/log/journal
-
 echo ""
-echo "=== Setup Complete ==="
+
+# Wait for systemd-journald to start
+echo "Waiting for journald to initialize..."
+sleep 2
+
+# Start dbus service explicitly
+echo "Starting dbus service..."
+systemctl start dbus || true
+sleep 1
+
+# Enable user session
+echo "Starting user-runtime-dir service..."
+systemctl start systemd-logind || true
+sleep 1
+
+# Create and setup runtime directories
+mkdir -p /run/user/0
+chmod 0700 /run/user/0
+export XDG_RUNTIME_DIR=/run/user/0
+
+# Verify journal is working
 echo ""
-echo "System Status:"
-sudo systemctl status --no-pager || true
+echo "=== Systemd Status ==="
+systemctl status systemd-journald.service || true
 echo ""
-echo "Usage:"
-echo "  sudo systemctl status                    - Check system services"
-echo "  sudo systemctl --user status             - Check user services"
-echo "  sudo systemctl start <service>           - Start a system service"
-echo "  sudo journalctl -b                       - View system logs"
-echo "  sudo journalctl -u <service>             - View service logs"
+
+# Show current state
+echo "=== System Overview ==="
+systemctl status --no-pager || true
+echo ""
+
+echo "=== Failed Units ==="
+systemctl list-units --failed --no-pager || true
+echo ""
+
+echo "=== Quick Commands ==="
+echo "View system logs:        sudo journalctl -b --no-pager | tail -50"
+echo "View recent logs:        sudo journalctl -e"
+echo "View service logs:       sudo journalctl -u SERVICE_NAME"
+echo "System status:           sudo systemctl status"
+echo "List failed units:       sudo systemctl list-units --failed"
