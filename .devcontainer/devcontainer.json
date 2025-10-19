@@ -6,12 +6,13 @@
   },
   "runArgs": [
     "--privileged",
-    "--volume", "/sys/fs/cgroup:/sys/fs/cgroup:ro",
+    "--volume", "/sys/fs/cgroup:/sys/fs/cgroup:rw",
     "--volume", "/var/log/journal:/var/log/journal:rw",
-    "--volume", "/var/run/dbus:/var/run/dbus:rw",
-    "--tmpfs", "/run:rw,size=1g,mode=0755",
-    "--tmpfs", "/run/lock:rw,size=1g,mode=0755"
+    "--volume", "/run/systemd:/run/systemd:rw",
+    "--tmpfs", "/tmp",
+    "--tmpfs", "/run"
   ],
-  "postStartCommand": "bash .devcontainer/start.sh",
-  "remoteUser": "root"
+  "overrideCommand": false,
+  "remoteUser": "root",
+  "postStartCommand": "sleep 3 && bash .devcontainer/start.sh"
 }
